@@ -173,11 +173,55 @@ module.exports = function setConvert(ax, fullLayout) {
     function l2p(v) {
         if(!isNumeric(v)) return BADNUM;
 
+        var m = ax._m;
+        var b = ax._b;
+
+        if(ax.breaks) {
+            var i, bnds;
+            m = ax._m2;
+            b = ax._B[0];
+
+            if(axLetter === 'y') {
+                for(i = 0; i < ax._breaks.length; i++) {
+                    bnds = Lib.simpleMap(ax._breaks[i].bounds, ax.r2l);
+                    if(v <= bnds[0]) b = ax._B[i + 1];
+                }
+            } else {
+                for(i = 0; i < ax._breaks.length; i++) {
+                    bnds = Lib.simpleMap(ax._breaks[i].bounds, ax.r2l);
+                    if(v >= bnds[1]) b = ax._B[i + 1];
+                }
+            }
+        }
+
         // include 2 fractional digits on pixel, for PDF zooming etc
-        return d3.round(ax._b + ax._m * v, 2);
+        return d3.round(b + m * v, 2);
     }
 
-    function p2l(px) { return (px - ax._b) / ax._m; }
+    function p2l(px) {
+        var m = ax._m;
+        var b = ax._b;
+
+        if(ax.breaks) {
+            var i, bnds;
+            m = ax._m2;
+            b = ax._B[0];
+
+            if(axLetter === 'y') {
+                for(i = 0; i < ax._breaks.length; i++) {
+                    bnds = Lib.simpleMap(ax._breaks[i].bounds, ax.l2p);
+                    if(px <= bnds[0]) b = ax._B[i + 1];
+                }
+            } else {
+                for(i = 0; i < ax._breaks.length; i++) {
+                    bnds = Lib.simpleMap(ax._breaks[i].bounds, ax.l2p);
+                    if(px >= bnds[1]) b = ax._B[i + 1];
+                }
+            }
+        }
+
+        return (px - b) / m;
+    }
 
     // conversions among c/l/p are fairly simple - do them together for all axis types
     ax.c2l = (ax.type === 'log') ? toLog : ensureNumber;
@@ -362,6 +406,18 @@ module.exports = function setConvert(ax, fullLayout) {
         };
     }
 
+    if(ax.breaks) {
+        var d2c = ax.d2c;
+        ax.d2c = function(v) {
+            var v2 = d2c(v);
+            for(var i = 0; i < ax.breaks.length; i++) {
+                var bnds = Lib.simpleMap(ax.breaks[i].bounds, d2c);
+                if(v2 > bnds[0] && v2 < bnds[1]) return BADNUM;
+            }
+            return v2;
+        };
+    }
+
     // find the range value at the specified (linear) fraction of the axis
     ax.fraction2r = function(v) {
         var rl0 = ax.r2l(ax.range[0]);
@@ -463,7 +519,7 @@ module.exports = function setConvert(ax, fullLayout) {
             ax.domain = ax2.domain;
         }
 
-        // While transitions are occuring, occurring, we get a double-transform
+        // While transitions are occurring, we get a double-transform
         // issue if we transform the drawn layer *and* use the new axis range to
         // draw the data. This allows us to construct setConvert using the pre-
         // interaction values of the range:
@@ -484,6 +540,42 @@ module.exports = function setConvert(ax, fullLayout) {
             ax._length = gs.w * (ax.domain[1] - ax.domain[0]);
             ax._m = ax._length / (rl1 - rl0);
             ax._b = -ax._m * rl0;
+        }
+
+        if(ax.breaks) {
+            var i, bnds;
+            var lBreaks = 0;
+            var lGaps = 0;
+            ax._B = [];
+
+            // assumes bnds[1] > bnds[0],
+            // and an ordered list of breaks with no overlaps
+
+            for(i = 0; i < ax.breaks.length; i++) {
+                bnds = Lib.simpleMap(ax.breaks[i].bounds, ax.r2l);
+                lBreaks += (bnds[1] - bnds[0]);
+
+                // TODO add attribute + px/normcoord/data unit modes
+                lGaps += 0;
+            }
+
+            if(axLetter === 'y') {
+                ax._m2 = -(ax._length - lGaps) / (rl1 - rl0 - lBreaks);
+                ax._B.push(-ax._m2 * rl1);
+                ax._breaks = ax.breaks.slice().reverse();
+                for(i = 0; i < ax._breaks.length; i++) {
+                    bnds = Lib.simpleMap(ax._breaks[i].bounds, ax.r2l);
+                    ax._B.push(ax._B[ax._B.length - 1] + ax._m2 * (bnds[1] - bnds[0]));
+                }
+            } else {
+                ax._m2 = (ax._length - lGaps) / (rl1 - rl0 - lBreaks);
+                ax._B.push(-ax._m2 * rl0);
+                ax._breaks = ax.breaks.slice();
+                for(i = 0; i < ax._breaks.length; i++) {
+                    bnds = Lib.simpleMap(ax._breaks[i].bounds, ax.r2l);
+                    ax._B.push(ax._B[ax._B.length - 1] - ax._m2 * (bnds[1] - bnds[0]));
+                }
+            }
         }
 
         if(!isFinite(ax._m) || !isFinite(ax._b) || ax._length < 0) {

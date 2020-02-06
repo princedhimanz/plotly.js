@@ -11,6 +11,8 @@
 var Registry = require('../../registry');
 var Lib = require('../../lib');
 
+var handleArrayContainerDefaults = require('../array_container_defaults');
+
 var layoutAttributes = require('./layout_attributes');
 var handleTickValueDefaults = require('./tick_value_defaults');
 var handleTickMarkDefaults = require('./tick_mark_defaults');
@@ -117,5 +119,32 @@ module.exports = function handleAxisDefaults(containerIn, containerOut, coerce, 
         }
     }
 
+    // TODO
+    // - does this make sense for 'category' and 'multicategory' axis types ??
+
+    var breaks = containerIn.breaks;
+    if(Array.isArray(breaks) && breaks.length) {
+        handleArrayContainerDefaults(containerIn, containerOut, {
+            name: 'breaks',
+            inclusionAttr: 'enabled',
+            handleItemDefaults: breaksDefaults
+        });
+
+        setConvert(containerOut, layoutOut);
+    }
+
     return containerOut;
 };
+
+function breaksDefaults(itemIn, itemOut) {
+    function coerce(attr, dflt) {
+        return Lib.coerce(itemIn, itemOut, layoutAttributes.breaks, attr, dflt);
+    }
+
+    var enabled = coerce('enabled');
+    if(enabled) {
+        coerce('bounds');
+
+        // ... more
+    }
+}

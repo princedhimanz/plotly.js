@@ -248,6 +248,51 @@ module.exports = {
             'Moreover, note that matching axes must have the same `type`.'
         ].join(' ')
     },
+    breaks: templatedArray('break', {
+        enabled: {
+            valType: 'boolean',
+            role: 'info',
+            dflt: true,
+            editType: 'calc',
+            description: [
+                '...'
+            ].join(' ')
+        },
+
+        bounds: {
+            valType: 'info_array',
+            role: 'info',
+            items: [
+                {valType: 'any', editType: 'calc'},
+                {valType: 'any', editType: 'calc'}
+            ],
+            editType: 'calc',
+            description: [
+                '...'
+            ].join(' ')
+        },
+
+        // operation: [] || {}
+        // value(s): [start, end], [rule]
+        //
+        // OR
+        // bounds: []
+        // dtickrange: []
+
+        // something like breakSize
+        // A number indicating how much space should be
+        // left between the start and the end of the break. The break size is
+        // given in axis units, so for instance on a datetime axis, a break size
+        // of 3600000 would indicate the equivalent of an hour.
+
+        // https://github.com/d3fc/d3fc/tree/master/packages/d3fc-discontinuous-scale
+        // https://github.com/d3fc/d3fc/tree/master/packages/d3fc-webgl/src
+        //
+        // https://github.com/plotly/plotly.js/issues/1382
+        // https://github.com/plotly/plotly.js/issues/4210
+
+        editType: 'calc'
+    }),
     // ticks
     tickmode: {
         valType: 'enumerated',
