@@ -210,7 +210,7 @@ module.exports = function setConvert(ax, fullLayout) {
             if(axLetter === 'y') {
                 for(i = 0; i < ax._breaks.length; i++) {
                     bnds = Lib.simpleMap(ax._breaks[i].bounds, ax.l2p);
-                    if(px <= bnds[0]) b = ax._B[i + 1];
+                    if(px >= bnds[0]) b = ax._B[i + 1];
                 }
             } else {
                 for(i = 0; i < ax._breaks.length; i++) {
