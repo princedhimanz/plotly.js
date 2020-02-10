@@ -631,6 +631,13 @@ axes.calcTicks = function calcTicks(ax) {
 
     ax._inCalcTicks = false;
 
+    // TODO could do better !
+    if(ax.breaks) {
+        ticksOut = ticksOut.filter(function(d) {
+            return ax.d2c(d.x) !== BADNUM;
+        });
+    }
+
     return ticksOut;
 };
 
