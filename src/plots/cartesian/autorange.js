@@ -197,7 +197,13 @@ function makePadFn(ax) {
             (ax.domain[1] - ax.domain[0]);
     }
 
-    return function getPad(pt) { return pt.pad + (pt.extrapad ? extrappad : 0); };
+    if(ax.breaks) {
+        // TODO could do better,
+        // probably by consider the breaks in value-space
+        return function getPad(pt) { return pt.pad; };
+    } else {
+        return function getPad(pt) { return pt.pad + (pt.extrapad ? extrappad : 0); };
+    }
 }
 
 function concatExtremes(gd, ax) {
