@@ -259,6 +259,8 @@ module.exports = {
             ].join(' ')
         },
 
+        // TODO maybe values with a free length?
+
         bounds: {
             valType: 'info_array',
             role: 'info',
@@ -285,6 +287,18 @@ module.exports = {
                 '%H - hour (24-hour clock) as a decimal number [00,23].'
             ].join(' ')
         },
+
+        operation: {
+            valType: 'enumerated',
+            // values: INTERVAL_OPS,
+            dflt: '()',  // TODO or '[]' ??
+            role: 'info',
+            editType: 'calc',
+            description: [
+                '...'
+            ].join(' ')
+        },
+
         // operation: [] || {}
         // value(s): [start, end], [rule]
         //
