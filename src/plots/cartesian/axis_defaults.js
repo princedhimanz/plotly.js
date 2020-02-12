@@ -144,6 +144,7 @@ function breaksDefaults(itemIn, itemOut) {
     var enabled = coerce('enabled');
     if(enabled) {
         coerce('bounds');
+        coerce('directive');
 
         // ... more
     }

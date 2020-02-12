@@ -272,6 +272,19 @@ module.exports = {
             ].join(' ')
         },
 
+        directive: {
+            valType: 'enumerated',
+            values: ['%w', '%H'],
+            role: 'info',
+            editType: 'calc',
+            description: [
+                '...',
+                'https://github.com/d3/d3-time-format#locale_format',
+                '',
+                '%w - Sunday-based weekday as a decimal number [0,6].',
+                '%H - hour (24-hour clock) as a decimal number [00,23].'
+            ].join(' ')
+        },
         // operation: [] || {}
         // value(s): [start, end], [rule]
         //
