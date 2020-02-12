@@ -176,19 +176,23 @@ module.exports = function setConvert(ax, fullLayout) {
         var m = ax._m;
         var b = ax._b;
 
+        // TODO we could also handle the 'inside-breaks' cases here
+        // as opposed to during d2c
+
         if(ax.breaks) {
             var i, bnds;
             m = ax._m2;
             b = ax._B[0];
 
             if(axLetter === 'y') {
+                m *= -1;
                 for(i = 0; i < ax._breaks.length; i++) {
-                    bnds = Lib.simpleMap(ax._breaks[i].bounds, ax.r2l);
+                    bnds = [ax._breaks[i].min, ax._breaks[i].max];
                     if(v <= bnds[0]) b = ax._B[i + 1];
                 }
             } else {
                 for(i = 0; i < ax._breaks.length; i++) {
-                    bnds = Lib.simpleMap(ax._breaks[i].bounds, ax.r2l);
+                    bnds = [ax._breaks[i].min, ax._breaks[i].max];
                     if(v >= bnds[1]) b = ax._B[i + 1];
                 }
             }
@@ -208,14 +212,15 @@ module.exports = function setConvert(ax, fullLayout) {
             b = ax._B[0];
 
             if(axLetter === 'y') {
+                m *= -1;
                 for(i = 0; i < ax._breaks.length; i++) {
-                    bnds = Lib.simpleMap(ax._breaks[i].bounds, ax.l2p);
-                    if(px >= bnds[0]) b = ax._B[i + 1];
+                    bnds = [ax._breaks[i].min, ax._breaks[i].max];
+                    if(px >= ax.l2p(bnds[0])) b = ax._B[i + 1];
                 }
             } else {
                 for(i = 0; i < ax._breaks.length; i++) {
-                    bnds = Lib.simpleMap(ax._breaks[i].bounds, ax.l2p);
-                    if(px >= bnds[1]) b = ax._B[i + 1];
+                    bnds = [ax._breaks[i].min, ax._breaks[i].max];
+                    if(px >= ax.l2p(bnds[1])) b = ax._B[i + 1];
                 }
             }
         }
@@ -411,8 +416,33 @@ module.exports = function setConvert(ax, fullLayout) {
         ax.d2c = function(v) {
             var v2 = d2c(v);
             for(var i = 0; i < ax.breaks.length; i++) {
-                var bnds = Lib.simpleMap(ax.breaks[i].bounds, d2c);
-                if(v2 > bnds[0] && v2 < bnds[1]) return BADNUM;
+                var brk = ax.breaks[i];
+                var bnds, v3;
+                if(brk.enabled) {
+                    switch(brk.directive) {
+                        case '%w':
+                            bnds = Lib.simpleMap(brk.bounds, cleanNumber);
+                            v3 = (new Date(v2)).getDay();
+                            if((v3 >= bnds[0] && v3 <= 6) || (v3 >= 0 && v3 < bnds[1])) {
+                                return BADNUM;
+                            }
+                            break;
+                        case '%H':
+                            bnds = Lib.simpleMap(brk.bounds, cleanNumber);
+                            v3 = (new Date(v2)).getHours();
+                            if((v3 > bnds[0] && v3 <= 24) || (v3 >= 0 && v3 < bnds[1])) {
+                                return BADNUM;
+                            }
+                            break;
+                        default:
+                            bnds = Lib.simpleMap(brk.bounds, d2c);
+                            v3 = v2;
+                            if(v3 > bnds[0] && v3 < bnds[1]) {
+                                return BADNUM;
+                            }
+                            break;
+                    }
+                }
             }
             return v2;
         };
@@ -546,35 +576,143 @@ module.exports = function setConvert(ax, fullLayout) {
             var i, bnds;
             var lBreaks = 0;
             var lGaps = 0;
+            ax._breaks = [];
             ax._B = [];
 
-            // assumes bnds[1] > bnds[0],
-            // and an ordered list of breaks with no overlaps
+            var addBreak = function(potentialBrk) {
+                for(var j = 0; j < ax._breaks.length; j++) {
+                    var brkj = ax._breaks[j];
+                    if(potentialBrk.min > brkj.max) {
+                        // ..
+                    } else if(potentialBrk.max < brkj.min) {
+                        // ..
+                    } else {
+                        if(potentialBrk.min < brkj.min) {
+                            brkj.min = potentialBrk.min;
+                        }
+                        if(potentialBrk.max > brkj.max) {
+                            brkj.max = potentialBrk.max;
+                        }
+                        potentialBrk = false;
+                    }
+                }
+                if(potentialBrk) {
+                    ax._breaks.push(potentialBrk);
+                }
+            };
+
+            var ONEDAY = 86400000;
+            var ONEHOUR = 3600000;
+            var ONEMIN = 60000;
+            var ONESEC = 1000;
+            var ONEWEEK = 7 * ONEDAY;
 
             for(i = 0; i < ax.breaks.length; i++) {
-                bnds = Lib.simpleMap(ax.breaks[i].bounds, ax.r2l);
+                var brk = ax.breaks[i];
+                var t, d0;
+
+                if(brk.enabled) {
+                    switch(brk.directive) {
+                        case '%w':
+                            bnds = Lib.simpleMap(brk.bounds, cleanNumber);
+                            d0 = new Date(rl0);
+
+                            var w0 = d0.getDay();
+                            var dw0 = bnds[0] - w0;
+
+                            if(dw0 > 0) {
+                                t = rl0 + dw0 * ONEDAY -
+                                    d0.getHours() * ONEHOUR -
+                                    d0.getMinutes() * ONEMIN -
+                                    d0.getSeconds() * ONESEC -
+                                    d0.getMilliseconds();
+                            } else {
+                                // TODO should we start from rl0
+                                // or have the breaks start before the range?
+                            }
+
+                            while(t <= rl1) {
+                                var dw1 = bnds[1] > bnds[0] ?
+                                    bnds[1] - bnds[0] :
+                                    (bnds[1] + 7) - bnds[0];
+
+                                addBreak({
+                                    min: t,
+                                    max: t + dw1 * ONEDAY
+                                });
+
+                                // TODO should we constrain `max` at rl1
+                                // or let it go above the range ??
+
+                                t += ONEWEEK;
+                            }
+                            break;
+                        case '%H':
+                            bnds = Lib.simpleMap(brk.bounds, cleanNumber);
+                            d0 = new Date(rl0);
+
+                            var h0 = d0.getHours();
+                            var dh0 = bnds[0] - h0;
+
+                            if(dh0 > 0) {
+                                t = rl0 + dh0 * ONEHOUR -
+                                    d0.getMinutes() * ONEMIN -
+                                    d0.getSeconds() * ONESEC -
+                                    d0.getMilliseconds();
+                            } else {
+                                // TODO should we start from rl0
+                                // or have the breaks start before the range?
+                            }
+
+                            while(t <= rl1) {
+                                var dh1 = bnds[1] > bnds[0] ?
+                                    bnds[1] - bnds[0] :
+                                    (bnds[1] + 24) - bnds[0];
+
+                                addBreak({
+                                    min: t,
+                                    max: t + dh1 * ONEHOUR
+                                });
+
+                                // TODO should we constrain `max` at rl1
+                                // or let it go above the range ??
+
+                                t += ONEDAY;
+                            }
+                            break;
+                        default:
+                            bnds = Lib.simpleMap(brk.bounds, ax.r2l);
+                            addBreak(bnds[0] <= bnds[1] ?
+                                {min: bnds[0], max: bnds[1]} :
+                                {min: bnds[1], max: bnds[0]}
+                            );
+                            break;
+                    }
+                }
+            }
+
+            ax._breaks.sort(function(a, b) { return a.min - b.min; });
+
+            for(i = 0; i < ax._breaks.length; i++) {
+                bnds = [ax._breaks[i].min, ax._breaks[i].max];
                 lBreaks += (bnds[1] - bnds[0]);
 
                 // TODO add attribute + px/normcoord/data unit modes
                 lGaps += 0;
             }
 
+            ax._m2 = (ax._length - lGaps) / (rl1 - rl0 - lBreaks);
+
             if(axLetter === 'y') {
-                ax._m2 = -(ax._length - lGaps) / (rl1 - rl0 - lBreaks);
-                ax._B.push(-ax._m2 * rl1);
-                ax._breaks = ax.breaks.slice().reverse();
-                for(i = 0; i < ax._breaks.length; i++) {
-                    bnds = Lib.simpleMap(ax._breaks[i].bounds, ax.r2l);
-                    ax._B.push(ax._B[ax._B.length - 1] + ax._m2 * (bnds[1] - bnds[0]));
-                }
+                ax._breaks.reverse();
+                ax._B.push(ax._m2 * rl1);
             } else {
-                ax._m2 = (ax._length - lGaps) / (rl1 - rl0 - lBreaks);
                 ax._B.push(-ax._m2 * rl0);
-                ax._breaks = ax.breaks.slice();
-                for(i = 0; i < ax._breaks.length; i++) {
-                    bnds = Lib.simpleMap(ax._breaks[i].bounds, ax.r2l);
-                    ax._B.push(ax._B[ax._B.length - 1] - ax._m2 * (bnds[1] - bnds[0]));
-                }
+            }
+
+            for(i = 0; i < ax._breaks.length; i++) {
+                bnds = [ax._breaks[i].min, ax._breaks[i].max];
+                ax._B.push(ax._B[ax._B.length - 1] - ax._m2 * (bnds[1] - bnds[0]));
             }
         }
 
