@@ -178,6 +178,7 @@ module.exports = function setConvert(ax, fullLayout) {
 
         // TODO we could also handle the 'inside-breaks' cases here
         // as opposed to during d2c
+        // but that might make autorange much harder to compute !
 
         if(ax.breaks) {
             var i, bnds;
