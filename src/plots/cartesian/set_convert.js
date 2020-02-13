@@ -580,25 +580,27 @@ module.exports = function setConvert(ax, fullLayout) {
             ax._breaks = [];
             ax._B = [];
 
-            var addBreak = function(potentialBrk) {
+            var addBreak = function(min, max) {
+                min = Math.max(rl0, min);
+                max = Math.min(max, rl1);
+
+                var isNewBreak = true;
                 for(var j = 0; j < ax._breaks.length; j++) {
                     var brkj = ax._breaks[j];
-                    if(potentialBrk.min > brkj.max) {
-                        // ..
-                    } else if(potentialBrk.max < brkj.min) {
-                        // ..
+                    if(min > brkj.max || max < brkj.min) {
+                        // potentially a new break
                     } else {
-                        if(potentialBrk.min < brkj.min) {
-                            brkj.min = potentialBrk.min;
+                        if(min < brkj.min) {
+                            brkj.min = min;
                         }
-                        if(potentialBrk.max > brkj.max) {
-                            brkj.max = potentialBrk.max;
+                        if(max > brkj.max) {
+                            brkj.max = max;
                         }
-                        potentialBrk = false;
+                        isNewBreak = false;
                     }
                 }
-                if(potentialBrk) {
-                    ax._breaks.push(potentialBrk);
+                if(isNewBreak) {
+                    ax._breaks.push({min: min, max: max});
                 }
             };
 
@@ -637,10 +639,7 @@ module.exports = function setConvert(ax, fullLayout) {
                                     bnds[1] - bnds[0] :
                                     (bnds[1] + 7) - bnds[0];
 
-                                addBreak({
-                                    min: t,
-                                    max: t + dw1 * ONEDAY
-                                });
+                                addBreak(t, t + dw1 * ONEDAY);
 
                                 // TODO should we constrain `max` at rl1
                                 // or let it go above the range ??
@@ -670,10 +669,7 @@ module.exports = function setConvert(ax, fullLayout) {
                                     bnds[1] - bnds[0] :
                                     (bnds[1] + 24) - bnds[0];
 
-                                addBreak({
-                                    min: t,
-                                    max: t + dh1 * ONEHOUR
-                                });
+                                addBreak(t, t + dh1 * ONEHOUR);
 
                                 // TODO should we constrain `max` at rl1
                                 // or let it go above the range ??
@@ -683,10 +679,11 @@ module.exports = function setConvert(ax, fullLayout) {
                             break;
                         default:
                             bnds = Lib.simpleMap(brk.bounds, ax.r2l);
-                            addBreak(bnds[0] <= bnds[1] ?
-                                {min: bnds[0], max: bnds[1]} :
-                                {min: bnds[1], max: bnds[0]}
-                            );
+                            if(bnds[0] <= bnds[1]) {
+                                addBreak(bnds[0], bnds[1]);
+                            } else {
+                                addBreak(bnds[1], bnds[0]);
+                            }
                             break;
                     }
                 }
