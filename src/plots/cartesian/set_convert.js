@@ -758,16 +758,23 @@ module.exports = function setConvert(ax, fullLayout) {
                 arrayOut[i] = ax.d2c(arrayIn[i], 0, cal);
             }
         } else {
-            var v0 = ((axLetter + '0') in trace) ? ax.d2c(trace[axLetter + '0'], 0, cal) : 0;
-            var dv = (trace['d' + axLetter]) ? Number(trace['d' + axLetter]) : 1;
-
             // the opposing data, for size if we have x and dx etc
             arrayIn = trace[{x: 'y', y: 'x'}[axLetter]];
             len = trace._length || arrayIn.length;
             arrayOut = new Array(len);
 
-            for(i = 0; i < len; i++) {
-                arrayOut[i] = v0 + i * dv;
+            var dv = (trace['d' + axLetter]) ? Number(trace['d' + axLetter]) : 1;
+            var d2c = ax.breaks ? Number : ax.d2c;
+            var v0 = ((axLetter + '0') in trace) ? d2c(trace[axLetter + '0'], 0, cal) : 0;
+
+            if(ax.breaks) {
+                for(i = 0; i < len; i++) {
+                    arrayOut[i] = ax.d2c(v0 + i * dv);
+                }
+            } else {
+                for(i = 0; i < len; i++) {
+                    arrayOut[i] = v0 + i * dv;
+                }
             }
         }
 
