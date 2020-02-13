@@ -437,8 +437,16 @@ module.exports = function setConvert(ax, fullLayout) {
                             break;
                         default:
                             bnds = Lib.simpleMap(brk.bounds, d2c);
+                            var min, max;
+                            if(bnds[0] <= bnds[1]) {
+                                min = bnds[0];
+                                max = bnds[1];
+                            } else {
+                                min = bnds[1];
+                                max = bnds[0];
+                            }
                             v3 = v2;
-                            if(v3 > bnds[0] && v3 < bnds[1]) {
+                            if(v3 > min && v3 < max) {
                                 return BADNUM;
                             }
                             break;
