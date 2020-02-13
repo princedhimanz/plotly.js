@@ -314,6 +314,8 @@ module.exports = {
 
         // https://github.com/d3fc/d3fc/tree/master/packages/d3fc-discontinuous-scale
         // https://github.com/d3fc/d3fc/tree/master/packages/d3fc-webgl/src
+        // https://github.com/d3/d3-time-format#locale_format
+        // https://github.com/d3/d3-time
         //
         // https://github.com/plotly/plotly.js/issues/1382
         // https://github.com/plotly/plotly.js/issues/4210
