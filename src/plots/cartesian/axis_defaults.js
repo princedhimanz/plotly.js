@@ -147,5 +147,8 @@ function breaksDefaults(itemIn, itemOut) {
         coerce('directive');
 
         // ... more
+
+        // TODO if break bounds are bigger than the (set) range,
+        // it should get set to enabled:false !!
     }
 }
