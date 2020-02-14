@@ -589,8 +589,9 @@ module.exports = function setConvert(ax, fullLayout) {
             ax._B = [];
 
             var addBreak = function(min, max) {
-                min = Math.max(rl0, min);
-                max = Math.min(max, rl1);
+                min = Lib.constrain(min, rl0, rl1);
+                max = Lib.constrain(max, rl0, rl1);
+                if(min === max) return;
 
                 var isNewBreak = true;
                 for(var j = 0; j < ax._breaks.length; j++) {
