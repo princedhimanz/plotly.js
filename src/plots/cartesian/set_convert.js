@@ -659,8 +659,7 @@ module.exports = function setConvert(ax, fullLayout) {
                                 var dw1 = bnds[1] > bnds[0] ?
                                     bnds[1] - bnds[0] :
                                     (bnds[1] + 7) - bnds[0];
-
-                                addBreak(t, t + dw1 * ONEDAY);
+                                addBreak(Math.floor(t), Math.floor(t + dw1 * ONEDAY));
                                 t += ONEWEEK;
                             }
                             break;
@@ -681,11 +680,16 @@ module.exports = function setConvert(ax, fullLayout) {
                                 // or have the breaks start before the range?
                             }
 
+                            // TODO we need to remove decimal (most often found
+                            // in auto ranges) for this to work correctly,
+                            // should this be Math.floor, Math.ceil or
+                            // Math.round ??
+
                             while(t <= rl1) {
                                 var dh1 = bnds[1] > bnds[0] ?
                                     bnds[1] - bnds[0] :
                                     (bnds[1] + 24) - bnds[0];
-                                addBreak(t, t + dh1 * ONEHOUR);
+                                addBreak(Math.floor(t), Math.floor(t + dh1 * ONEHOUR));
                                 t += ONEDAY;
                             }
                             break;
