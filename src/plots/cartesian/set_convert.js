@@ -649,10 +649,6 @@ module.exports = function setConvert(ax, fullLayout) {
                                     (bnds[1] + 7) - bnds[0];
 
                                 addBreak(t, t + dw1 * ONEDAY);
-
-                                // TODO should we constrain `max` at rl1
-                                // or let it go above the range ??
-
                                 t += ONEWEEK;
                             }
                             break;
@@ -677,12 +673,7 @@ module.exports = function setConvert(ax, fullLayout) {
                                 var dh1 = bnds[1] > bnds[0] ?
                                     bnds[1] - bnds[0] :
                                     (bnds[1] + 24) - bnds[0];
-
                                 addBreak(t, t + dh1 * ONEHOUR);
-
-                                // TODO should we constrain `max` at rl1
-                                // or let it go above the range ??
-
                                 t += ONEDAY;
                             }
                             break;
