@@ -423,14 +423,14 @@ module.exports = function setConvert(ax, fullLayout) {
                     switch(brk.directive) {
                         case '%w':
                             bnds = Lib.simpleMap(brk.bounds, cleanNumber);
-                            v3 = (new Date(v2)).getDay();
+                            v3 = (new Date(v2)).getUTCDay();
                             if((v3 >= bnds[0] && v3 <= 6) || (v3 >= 0 && v3 < bnds[1])) {
                                 return BADNUM;
                             }
                             break;
                         case '%H':
                             bnds = Lib.simpleMap(brk.bounds, cleanNumber);
-                            v3 = (new Date(v2)).getHours();
+                            v3 = (new Date(v2)).getUTCHours();
                             if((v3 > bnds[0] && v3 <= 24) || (v3 >= 0 && v3 < bnds[1])) {
                                 return BADNUM;
                             }
@@ -629,15 +629,15 @@ module.exports = function setConvert(ax, fullLayout) {
                             bnds = Lib.simpleMap(brk.bounds, cleanNumber);
                             d0 = new Date(rl0);
 
-                            var w0 = d0.getDay();
+                            var w0 = d0.getUTCDay();
                             var dw0 = bnds[0] - w0;
 
                             if(dw0 > 0) {
                                 t = rl0 + dw0 * ONEDAY -
-                                    d0.getHours() * ONEHOUR -
-                                    d0.getMinutes() * ONEMIN -
-                                    d0.getSeconds() * ONESEC -
-                                    d0.getMilliseconds();
+                                    d0.getUTCHours() * ONEHOUR -
+                                    d0.getUTCMinutes() * ONEMIN -
+                                    d0.getUTCSeconds() * ONESEC -
+                                    d0.getUTCMilliseconds();
                             } else {
                                 // TODO should we start from rl0
                                 // or have the breaks start before the range?
@@ -656,14 +656,14 @@ module.exports = function setConvert(ax, fullLayout) {
                             bnds = Lib.simpleMap(brk.bounds, cleanNumber);
                             d0 = new Date(rl0);
 
-                            var h0 = d0.getHours();
+                            var h0 = d0.getUTCHours();
                             var dh0 = bnds[0] - h0;
 
                             if(dh0 > 0) {
                                 t = rl0 + dh0 * ONEHOUR -
-                                    d0.getMinutes() * ONEMIN -
-                                    d0.getSeconds() * ONESEC -
-                                    d0.getMilliseconds();
+                                    d0.getUTCMinutes() * ONEMIN -
+                                    d0.getUTCSeconds() * ONESEC -
+                                    d0.getUTCMilliseconds();
                             } else {
                                 // TODO should we start from rl0
                                 // or have the breaks start before the range?
