@@ -424,15 +424,27 @@ module.exports = function setConvert(ax, fullLayout) {
                         case '%w':
                             bnds = Lib.simpleMap(brk.bounds, cleanNumber);
                             v3 = (new Date(v2)).getUTCDay();
-                            if((v3 >= bnds[0] && v3 <= 6) || (v3 >= 0 && v3 < bnds[1])) {
-                                return BADNUM;
+                            if(bnds[0] > bnds[1]) {
+                                if(v3 >= bnds[0] || v3 < bnds[1]) {
+                                    return BADNUM;
+                                }
+                            } else {
+                                if(v3 > bnds[0] && v3 < bnds[1]) {
+                                    return BADNUM;
+                                }
                             }
                             break;
                         case '%H':
                             bnds = Lib.simpleMap(brk.bounds, cleanNumber);
                             v3 = (new Date(v2)).getUTCHours();
-                            if((v3 > bnds[0] && v3 <= 24) || (v3 >= 0 && v3 < bnds[1])) {
-                                return BADNUM;
+                            if(bnds[0] > bnds[1]) {
+                                if(v3 > bnds[0] || v3 < bnds[1]) {
+                                    return BADNUM;
+                                }
+                            } else {
+                                if(v3 > bnds[0] && v3 < bnds[1]) {
+                                    return BADNUM;
+                                }
                             }
                             break;
                         default:
