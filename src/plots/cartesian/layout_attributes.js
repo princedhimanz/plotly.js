@@ -291,6 +291,7 @@ module.exports = {
         operation: {
             valType: 'enumerated',
             // values: INTERVAL_OPS,
+            values: ['[]', '()'],
             dflt: '()',  // TODO or '[]' ??
             role: 'info',
             editType: 'calc',
