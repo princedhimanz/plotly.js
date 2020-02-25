@@ -414,63 +414,6 @@ module.exports = function setConvert(ax, fullLayout) {
         };
     }
 
-    if(ax.breaks) {
-        var d2c = ax.d2c;
-        ax.d2c = function(v) {
-            var v2 = d2c(v);
-            for(var i = 0; i < ax.breaks.length; i++) {
-                var brk = ax.breaks[i];
-                var bnds, v3;
-                if(brk.enabled) {
-                    switch(brk.directive) {
-                        case '%w':
-                            bnds = Lib.simpleMap(brk.bounds, cleanNumber);
-                            v3 = (new Date(v2)).getUTCDay();
-                            if(bnds[0] > bnds[1]) {
-                                if(v3 >= bnds[0] || v3 < bnds[1]) {
-                                    return BADNUM;
-                                }
-                            } else {
-                                if(v3 > bnds[0] && v3 < bnds[1]) {
-                                    return BADNUM;
-                                }
-                            }
-                            break;
-                        case '%H':
-                            bnds = Lib.simpleMap(brk.bounds, cleanNumber);
-                            v3 = (new Date(v2)).getUTCHours();
-                            if(bnds[0] > bnds[1]) {
-                                if(v3 > bnds[0] || v3 < bnds[1]) {
-                                    return BADNUM;
-                                }
-                            } else {
-                                if(v3 > bnds[0] && v3 < bnds[1]) {
-                                    return BADNUM;
-                                }
-                            }
-                            break;
-                        default:
-                            bnds = Lib.simpleMap(brk.bounds, d2c);
-                            var min, max;
-                            if(bnds[0] <= bnds[1]) {
-                                min = bnds[0];
-                                max = bnds[1];
-                            } else {
-                                min = bnds[1];
-                                max = bnds[0];
-                            }
-                            v3 = v2;
-                            if(v3 > min && v3 < max) {
-                                return BADNUM;
-                            }
-                            break;
-                    }
-                }
-            }
-            return v2;
-        };
-    }
-
     // find the range value at the specified (linear) fraction of the axis
     ax.fraction2r = function(v) {
         var rl0 = ax.r2l(ax.range[0]);
@@ -635,10 +578,67 @@ module.exports = function setConvert(ax, fullLayout) {
         }
     };
 
+    // ...
+    ax.maskBreaks = function(v) {
+        var breaksIn = ax.breaks || [];
+        var v2, bnds;
+
+        for(var i = 0; i < breaksIn.length; i++) {
+            var brk = breaksIn[i];
+
+            if(brk.enabled) {
+                switch(brk.directive) {
+                    case '%w':
+                        bnds = Lib.simpleMap(brk.bounds, cleanNumber);
+                        v2 = (new Date(v)).getUTCDay();
+                        if(bnds[0] > bnds[1]) {
+                            if(v2 >= bnds[0] || v2 < bnds[1]) {
+                                return BADNUM;
+                            }
+                        } else {
+                            if(v2 > bnds[0] && v2 < bnds[1]) {
+                                return BADNUM;
+                            }
+                        }
+                        break;
+                    case '%H':
+                        bnds = Lib.simpleMap(brk.bounds, cleanNumber);
+                        v2 = (new Date(v)).getUTCHours();
+                        if(bnds[0] > bnds[1]) {
+                            if(v2 > bnds[0] || v2 < bnds[1]) {
+                                return BADNUM;
+                            }
+                        } else {
+                            if(v2 > bnds[0] && v2 < bnds[1]) {
+                                return BADNUM;
+                            }
+                        }
+                        break;
+                    default:
+                        bnds = Lib.simpleMap(brk.bounds, ax.d2c);
+                        var min, max;
+                        if(bnds[0] <= bnds[1]) {
+                            min = bnds[0];
+                            max = bnds[1];
+                        } else {
+                            min = bnds[1];
+                            max = bnds[0];
+                        }
+                        v2 = v;
+                        if(v2 > min && v2 < max) {
+                            return BADNUM;
+                        }
+                        break;
+                }
+            }
+        }
+        return v;
+    };
+
     ax.locateBreaks = function(r0, r1) {
-        var i, bnds;
         var breaksIn = ax.breaks || [];
         var breaksOut = [];
+        var i, bnds;
 
         var addBreak = function(min, max) {
             min = Lib.constrain(min, r0, r1);
@@ -786,23 +786,23 @@ module.exports = function setConvert(ax, fullLayout) {
                 arrayOut[i] = ax.d2c(arrayIn[i], 0, cal);
             }
         } else {
+            var v0 = ((axLetter + '0') in trace) ? ax.d2c(trace[axLetter + '0'], 0, cal) : 0;
+            var dv = (trace['d' + axLetter]) ? Number(trace['d' + axLetter]) : 1;
+
             // the opposing data, for size if we have x and dx etc
             arrayIn = trace[{x: 'y', y: 'x'}[axLetter]];
             len = trace._length || arrayIn.length;
             arrayOut = new Array(len);
 
-            var dv = (trace['d' + axLetter]) ? Number(trace['d' + axLetter]) : 1;
-            var d2cForv0 = ax.breaks ? Number : ax.d2c;
-            var v0 = ((axLetter + '0') in trace) ? d2cForv0(trace[axLetter + '0'], 0, cal) : 0;
+            for(i = 0; i < len; i++) {
+                arrayOut[i] = v0 + i * dv;
+            }
+        }
 
-            if(ax.breaks) {
-                for(i = 0; i < len; i++) {
-                    arrayOut[i] = ax.d2c(v0 + i * dv);
-                }
-            } else {
-                for(i = 0; i < len; i++) {
-                    arrayOut[i] = v0 + i * dv;
-                }
+        // mask (i.e. set to BADNUM) coords that fall inside breaks
+        if(ax.breaks) {
+            for(i = 0; i < len; i++) {
+                arrayOut[i] = ax.maskBreaks(arrayOut[i]);
             }
         }
 

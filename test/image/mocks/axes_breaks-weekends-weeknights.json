@@ -20,7 +20,8 @@
   "layout": {
     "xaxis": {
       "breaks": [
-        { "directive": "%w",
+        {
+          "directive": "%w",
           "bounds": [ 6, 1 ],
           "operation": "[]"
         },
