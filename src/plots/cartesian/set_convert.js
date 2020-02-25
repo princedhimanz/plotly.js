@@ -595,129 +595,26 @@ module.exports = function setConvert(ax, fullLayout) {
             ax._b = -ax._m * rl0;
         }
 
+        // set of "N" disjoint breaks inside the range
+        ax._breaks = [];
+        // length of these breaks in value space
+        ax._lBreaks = 0;
+        // l2p slope (same for all intervals)
+        ax._m2 = 0;
+        // set of l2p offsets (one for each of the (N+1) piecewise intervals)
+        ax._B = [];
+
         if(ax.breaks) {
             var i, bnds;
-            var lBreaks = 0;
-            var lGaps = 0;
-            ax._breaks = [];
-            ax._B = [];
 
-            var addBreak = function(min, max) {
-                min = Lib.constrain(min, rl0, rl1);
-                max = Lib.constrain(max, rl0, rl1);
-                if(min === max) return;
-
-                var isNewBreak = true;
-                for(var j = 0; j < ax._breaks.length; j++) {
-                    var brkj = ax._breaks[j];
-                    if(min > brkj.max || max < brkj.min) {
-                        // potentially a new break
-                    } else {
-                        if(min < brkj.min) {
-                            brkj.min = min;
-                        }
-                        if(max > brkj.max) {
-                            brkj.max = max;
-                        }
-                        isNewBreak = false;
-                    }
-                }
-                if(isNewBreak) {
-                    ax._breaks.push({min: min, max: max});
-                }
-            };
-
-            var ONEDAY = 86400000;
-            var ONEHOUR = 3600000;
-            var ONEMIN = 60000;
-            var ONESEC = 1000;
-            var ONEWEEK = 7 * ONEDAY;
-
-            for(i = 0; i < ax.breaks.length; i++) {
-                var brk = ax.breaks[i];
-                var t, d0;
-
-                if(brk.enabled) {
-                    switch(brk.directive) {
-                        case '%w':
-                            bnds = Lib.simpleMap(brk.bounds, cleanNumber);
-                            d0 = new Date(rl0);
-
-                            var w0 = d0.getUTCDay();
-                            var dw0 = bnds[0] - w0;
-
-                            if(dw0 > 0) {
-                                t = rl0 + dw0 * ONEDAY -
-                                    d0.getUTCHours() * ONEHOUR -
-                                    d0.getUTCMinutes() * ONEMIN -
-                                    d0.getUTCSeconds() * ONESEC -
-                                    d0.getUTCMilliseconds();
-                            } else {
-                                // TODO should we start from rl0
-                                // or have the breaks start before the range?
-                            }
-
-                            while(t <= rl1) {
-                                var dw1 = bnds[1] > bnds[0] ?
-                                    bnds[1] - bnds[0] :
-                                    (bnds[1] + 7) - bnds[0];
-                                addBreak(Math.floor(t), Math.floor(t + dw1 * ONEDAY));
-                                t += ONEWEEK;
-                            }
-                            break;
-                        case '%H':
-                            bnds = Lib.simpleMap(brk.bounds, cleanNumber);
-                            d0 = new Date(rl0);
-
-                            var h0 = d0.getUTCHours();
-                            var dh0 = bnds[0] - h0;
-
-                            if(dh0 > 0) {
-                                t = rl0 + dh0 * ONEHOUR -
-                                    d0.getUTCMinutes() * ONEMIN -
-                                    d0.getUTCSeconds() * ONESEC -
-                                    d0.getUTCMilliseconds();
-                            } else {
-                                // TODO should we start from rl0
-                                // or have the breaks start before the range?
-                            }
-
-                            // TODO we need to remove decimal (most often found
-                            // in auto ranges) for this to work correctly,
-                            // should this be Math.floor, Math.ceil or
-                            // Math.round ??
-
-                            while(t <= rl1) {
-                                var dh1 = bnds[1] > bnds[0] ?
-                                    bnds[1] - bnds[0] :
-                                    (bnds[1] + 24) - bnds[0];
-                                addBreak(Math.floor(t), Math.floor(t + dh1 * ONEHOUR));
-                                t += ONEDAY;
-                            }
-                            break;
-                        default:
-                            bnds = Lib.simpleMap(brk.bounds, ax.r2l);
-                            if(bnds[0] <= bnds[1]) {
-                                addBreak(bnds[0], bnds[1]);
-                            } else {
-                                addBreak(bnds[1], bnds[0]);
-                            }
-                            break;
-                    }
-                }
-            }
-
-            ax._breaks.sort(function(a, b) { return a.min - b.min; });
+            ax._breaks = ax.locateBreaks(rl0, rl1);
 
             for(i = 0; i < ax._breaks.length; i++) {
                 bnds = [ax._breaks[i].min, ax._breaks[i].max];
-                lBreaks += (bnds[1] - bnds[0]);
-
-                // TODO add attribute + px/normcoord/data unit modes
-                lGaps += 0;
+                ax._lBreaks += (bnds[1] - bnds[0]);
             }
 
-            ax._m2 = (ax._length - lGaps) / (rl1 - rl0 - lBreaks);
+            ax._m2 = ax._length / (rl1 - rl0 - ax._lBreaks);
 
             if(axLetter === 'y') {
                 ax._breaks.reverse();
@@ -736,6 +633,121 @@ module.exports = function setConvert(ax, fullLayout) {
             fullLayout._replotting = false;
             throw new Error('Something went wrong with axis scaling');
         }
+    };
+
+    ax.locateBreaks = function(r0, r1) {
+        var i, bnds;
+        var breaksIn = ax.breaks || [];
+        var breaksOut = [];
+
+        var addBreak = function(min, max) {
+            min = Lib.constrain(min, r0, r1);
+            max = Lib.constrain(max, r0, r1);
+            if(min === max) return;
+
+            var isNewBreak = true;
+            for(var j = 0; j < breaksOut.length; j++) {
+                var brkj = breaksOut[j];
+                if(min > brkj.max || max < brkj.min) {
+                    // potentially a new break
+                } else {
+                    if(min < brkj.min) {
+                        brkj.min = min;
+                    }
+                    if(max > brkj.max) {
+                        brkj.max = max;
+                    }
+                    isNewBreak = false;
+                }
+            }
+            if(isNewBreak) {
+                breaksOut.push({min: min, max: max});
+            }
+        };
+
+        var ONEDAY = 86400000;
+        var ONEHOUR = 3600000;
+        var ONEMIN = 60000;
+        var ONESEC = 1000;
+        var ONEWEEK = 7 * ONEDAY;
+
+        for(i = 0; i < breaksIn.length; i++) {
+            var brk = breaksIn[i];
+            var t, d0;
+
+            if(brk.enabled) {
+                switch(brk.directive) {
+                    case '%w':
+                        bnds = Lib.simpleMap(brk.bounds, cleanNumber);
+                        d0 = new Date(r0);
+
+                        var w0 = d0.getUTCDay();
+                        var dw0 = bnds[0] - w0;
+
+                        if(dw0 > 0) {
+                            t = r0 + dw0 * ONEDAY -
+                                d0.getUTCHours() * ONEHOUR -
+                                d0.getUTCMinutes() * ONEMIN -
+                                d0.getUTCSeconds() * ONESEC -
+                                d0.getUTCMilliseconds();
+                        } else {
+                            // TODO should we start from r0
+                            // or have the breaks start before the range?
+                        }
+
+                        while(t <= r1) {
+                            var dw1 = bnds[1] > bnds[0] ?
+                                bnds[1] - bnds[0] :
+                                (bnds[1] + 7) - bnds[0];
+                            addBreak(Math.floor(t), Math.floor(t + dw1 * ONEDAY));
+                            t += ONEWEEK;
+                        }
+                        break;
+                    case '%H':
+                        bnds = Lib.simpleMap(brk.bounds, cleanNumber);
+                        d0 = new Date(r0);
+
+                        var h0 = d0.getUTCHours();
+                        var dh0 = bnds[0] - h0;
+
+                        if(dh0 > 0) {
+                            t = r0 + dh0 * ONEHOUR -
+                                d0.getUTCMinutes() * ONEMIN -
+                                d0.getUTCSeconds() * ONESEC -
+                                d0.getUTCMilliseconds();
+                        } else {
+                            // TODO should we start from r0
+                            // or have the breaks start before the range?
+                        }
+
+                        // TODO we need to remove decimal (most often found
+                        // in auto ranges) for this to work correctly,
+                        // should this be Math.floor, Math.ceil or
+                        // Math.round ??
+
+                        while(t <= r1) {
+                            var dh1 = bnds[1] > bnds[0] ?
+                                bnds[1] - bnds[0] :
+                                (bnds[1] + 24) - bnds[0];
+                            addBreak(Math.floor(t), Math.floor(t + dh1 * ONEHOUR));
+                            t += ONEDAY;
+                        }
+                        break;
+                    default:
+                        bnds = Lib.simpleMap(brk.bounds, ax.r2l);
+                        if(bnds[0] <= bnds[1]) {
+                            addBreak(bnds[0], bnds[1]);
+                        } else {
+                            addBreak(bnds[1], bnds[0]);
+                        }
+                        break;
+                }
+            }
+        }
+
+        breaksOut.sort(function(a, b) { return a.min - b.min; });
+
+        return breaksOut;
     };
 
     // makeCalcdata: takes an x or y array and converts it
