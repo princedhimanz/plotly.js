@@ -22,7 +22,6 @@ var setCursor = require('../../lib/setcursor');
 var constants = require('./constants');
 var helpers = require('./helpers');
 
-
 // Shapes are stored in gd.layout.shapes, an array of objects
 // index can point to one item in this array,
 //  or non-numeric to simply add a new one
@@ -106,7 +105,9 @@ function drawOne(gd, index) {
 
         setClipPath(path, gd, options);
 
-        if(gd._context.edits.shapePosition) setupDragElement(gd, path, options, index, shapeLayer);
+        if(gd._context.edits.shapePosition || options.editable) {
+            setupDragElement(gd, path, options, index, shapeLayer);
+        }
     }
 }
 

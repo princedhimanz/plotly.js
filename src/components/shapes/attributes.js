@@ -249,5 +249,15 @@ module.exports = templatedArray('shape', {
             'For more info please visit https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/fill-rule'
         ].join(' ')
     },
+    editable: {
+        valType: 'boolean',
+        role: 'info',
+        dflt: false,
+        editType: 'calc+arraydraw',
+        description: [
+            'Determines whether the shape is editable or not.'
+        ].join(' ')
+    },
+
     editType: 'arraydraw'
 });

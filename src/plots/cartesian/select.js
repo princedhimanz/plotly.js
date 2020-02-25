@@ -1041,6 +1041,8 @@ function addShape(outlines, dragOptions, opts) {
         if(len < 2) continue;
 
         var shape = {
+            editable: drwStyle.editable,
+
             xref: (map || onPaper) ? 'paper' : xaxis._id,
             yref: (map || onPaper) ? 'paper' : yaxis._id,
 

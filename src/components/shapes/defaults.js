@@ -33,6 +33,7 @@ function handleShapeDefaults(shapeIn, shapeOut, fullLayout) {
 
     if(!visible) return;
 
+    coerce('editable');
     coerce('layer');
     coerce('opacity');
     coerce('fillcolor');
