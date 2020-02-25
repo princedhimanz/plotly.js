@@ -724,30 +724,30 @@ function displayOutlines(
     }
 
     function moveVertex(dx, dy) {
-        var polygon = polygons[indexI];
-        var len = polygon.length;
-        if(len === 4 && pointsShapeRectangle(polygon)) {
+        var cell = polygons[indexI];
+        var len = cell.length;
+        if(len === 4 && pointsShapeRectangle(cell)) {
             for(var q = 0; q < len; q++) {
                 if(q === indexJ) continue;
 
                 // move other corners of rectangle
-                var pos = polygon[q];
+                var pos = cell[q];
 
-                if(pos[0] === polygon[indexJ][0]) {
+                if(pos[0] === cell[indexJ][0]) {
                     pos[0] = cx + dx;
                 }
 
-                if(pos[1] === polygon[indexJ][1]) {
+                if(pos[1] === cell[indexJ][1]) {
                     pos[1] = cy + dy;
                 }
             }
             // move the corner
-            polygon[indexJ][0] = cx + dx;
-            polygon[indexJ][1] = cy + dy;
+            cell[indexJ][0] = cx + dx;
+            cell[indexJ][1] = cy + dy;
         } else { // other polylines
-            polygon[indexJ][0] = cx + dx;
-            polygon[indexJ][1] = cy + dy;
-            polygon._formchanged = true;
+            cell[indexJ][0] = cx + dx;
+            cell[indexJ][1] = cy + dy;
+            cell._formchanged = true;
         }
 
         // recursive call
@@ -835,9 +835,9 @@ function displayOutlines(
     }
 }
 
-function providePath(polygon, isOpen) {
-    return polygon.join('L') + (
-        isOpen ? '' : 'L' + polygon[0]
+function providePath(cell, isOpen) {
+    return cell.join('L') + (
+        isOpen ? '' : 'L' + cell[0]
     );
 }
 
@@ -936,23 +936,23 @@ function calcArea(points) {
 }
 */
 
-function pointsShapeRectangle(polygon) {
+function pointsShapeRectangle(cell) {
     for(var j = 0; j < 2; j++) {
-        var e01 = polygon[0][j] - polygon[1][j];
-        var e32 = polygon[3][j] - polygon[2][j];
+        var e01 = cell[0][j] - cell[1][j];
+        var e32 = cell[3][j] - cell[2][j];
 
         if(!almostEq(e01, e32)) return false;
 
-        var e03 = polygon[0][j] - polygon[3][j];
-        var e12 = polygon[1][j] - polygon[2][j];
+        var e03 = cell[0][j] - cell[3][j];
+        var e12 = cell[1][j] - cell[2][j];
         if(!almostEq(e03, e12)) return false;
     }
 
     return true;
 }
 
-function pointsShapeEllipse(polygon) {
-    return !!polygon._formchanged;
+function pointsShapeEllipse(cell) {
+    return !!cell._formchanged;
 }
 
 function handleEllipse(isEllipse, start, end) {
@@ -974,15 +974,15 @@ function handleEllipse(isEllipse, start, end) {
     if(!rx) rx = ry = ry / SQRT2;
     if(!ry) ry = rx = rx / SQRT2;
 
-    var polygon = [];
+    var cell = [];
     for(var i = 0; i < CIRCLE_SIDES; i++) {
         var t = i * 2 * Math.PI / CIRCLE_SIDES;
-        polygon.push([
+        cell.push([
             cx + rx * Math.cos(t),
             cy + ry * Math.sin(t),
         ]);
     }
-    return polygon;
+    return cell;
 }
 
 function ellipseOver(pos) {
@@ -1036,8 +1036,8 @@ function addShape(outlines, dragOptions, opts) {
     var polygons = readPaths(d, fullLayout._size, (map || onPaper) ? undefined : plotinfo);
 
     for(var i = 0; i < polygons.length; i++) {
-        var polygon = polygons[i];
-        var len = polygon.length - (isOpen ? 0 : 1); // skip closing point
+        var cell = polygons[i];
+        var len = cell.length - (isOpen ? 0 : 1); // skip closing point
         if(len < 2) continue;
 
         var shape = {
@@ -1065,16 +1065,16 @@ function addShape(outlines, dragOptions, opts) {
             isRectMode && drwStyle.drawshape === 'circular' &&
             xaxis.type !== 'log' && yaxis.type !== 'log' &&
             xaxis.type !== 'date' && yaxis.type !== 'date' &&
-            pointsShapeEllipse(polygon)
+            pointsShapeEllipse(cell)
         ) {
             shape.type = 'circle'; // an ellipse!
             var j = Math.floor((CIRCLE_SIDES + 1) / 2);
             var k = Math.floor((CIRCLE_SIDES + 1) / 8);
             var pos = ellipseOver({
-                x0: (polygon[0][0] + polygon[j][0]) / 2,
-                y0: (polygon[0][1] + polygon[j][1]) / 2,
-                x1: polygon[k][0],
-                y1: polygon[k][1],
+                x0: (cell[0][0] + cell[j][0]) / 2,
+                y0: (cell[0][1] + cell[j][1]) / 2,
+                x1: cell[k][0],
+                y1: cell[k][1],
             });
             shape.x0 = pos.x0;
             shape.y0 = pos.y0;
@@ -1082,25 +1082,25 @@ function addShape(outlines, dragOptions, opts) {
             shape.y1 = pos.y1;
         } else if(
             len === 4 && isRectMode &&
-            pointsShapeRectangle(polygon)
+            pointsShapeRectangle(cell)
         ) {
             shape.type = 'rect';
-            shape.x0 = polygon[0][0];
-            shape.y0 = polygon[0][1];
-            shape.x1 = polygon[2][0];
-            shape.y1 = polygon[2][1];
+            shape.x0 = cell[0][0];
+            shape.y0 = cell[0][1];
+            shape.x1 = cell[2][0];
+            shape.y1 = cell[2][1];
         } else if(len === 2 && isRectMode && isOpen) {
             shape.type = 'line';
-            shape.x0 = polygon[0][0];
-            shape.y0 = polygon[0][1];
-            shape.x1 = polygon[1][0];
-            shape.y1 = polygon[1][1];
+            shape.x0 = cell[0][0];
+            shape.y0 = cell[0][1];
+            shape.x1 = cell[1][0];
+            shape.y1 = cell[1][1];
         } else {
             shape.type = 'path';
-            fixDatesOnPaths(polygon, xaxis, yaxis);
+            fixDatesOnPaths(cell, xaxis, yaxis);
 
             shape.path = writePaths([
-                providePath(polygon, isOpen)
+                providePath(cell, isOpen)
             ], isOpen);
         }
 
