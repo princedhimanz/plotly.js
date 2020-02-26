@@ -4071,6 +4071,8 @@ describe('Test axes', function() {
                 ]);
             });
 
+            // TODO more directive values !!
+
             it('should adapt coords generated from x0/dx about breaks', function() {
                 _calc({
                     x0: 1,

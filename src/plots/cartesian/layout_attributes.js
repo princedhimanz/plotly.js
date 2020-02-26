@@ -300,7 +300,7 @@ module.exports = {
             // but only since it uses UTC time. A fix `repeat` settings is a
             // little misleading in my opinion.
             //
-            values: ['%w', '%H'],
+            values: ['%w', '%H', ''],
             role: 'info',
             editType: 'calc',
             description: [
@@ -309,7 +309,9 @@ module.exports = {
                 'https://github.com/d3/d3-time-format#locale_format',
                 '',
                 '%w - Sunday-based weekday as a decimal number [0,6].',
-                '%H - hour (24-hour clock) as a decimal number [00,23].'
+                '%H - hour (24-hour clock) as a decimal number [00,23].',
+                '..',
+                '\'\'\ - ...'
             ].join(' ')
         },
 
