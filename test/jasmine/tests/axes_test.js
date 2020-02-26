@@ -3917,10 +3917,10 @@ describe('Test axes', function() {
                 Plots.doCalcdata(gd);
             }
 
-            function _assert(exp) {
+            function _assert(msg, exp) {
                 var cd = gd.calcdata[0];
                 var xc = cd.map(function(cdi) { return cdi.x; });
-                expect(xc).toEqual(exp);
+                expect(xc).withContext(msg).toEqual(exp);
             }
 
             it('should discard coords within break bounds', function() {
@@ -3929,45 +3929,98 @@ describe('Test axes', function() {
                 }, {
                     xaxis: {
                         breaks: [
-                            {bounds: [11, 89]},
-                            {bounds: [101, 189]}
+                            {'operation': '()', bounds: [10, 90]},
+                            {'operation': '()', bounds: [100, 190]}
                         ]
                     }
                 });
-                _assert([0, 10, BADNUM, 90, 100, BADNUM, 190, 200]);
-            });
+                _assert('with operation:()', [0, 10, BADNUM, 90, 100, BADNUM, 190, 200]);
 
-            it('should discard coords within break bounds - date %w case', function() {
                 _calc({
-                    x: [
-                        // Thursday
-                        '2020-01-02 08:00', '2020-01-02 16:00',
-                        // Friday
-                        '2020-01-03 08:00', '2020-01-03 16:00',
-                        // Saturday
-                        '2020-01-04 08:00', '2020-01-04 16:00',
-                        // Sunday
-                        '2020-01-05 08:00', '2020-01-05 16:00',
-                        // Monday
-                        '2020-01-06 08:00', '2020-01-06 16:00',
-                        // Tuesday
-                        '2020-01-07 08:00', '2020-01-07 16:00'
-                    ]
+                    x: [0, 10, 50, 90, 100, 150, 190, 200]
                 }, {
                     xaxis: {
                         breaks: [
-                            {directive: '%w', bounds: [6, 1]}
+                            {operation: '[]', bounds: [10, 90]},
+                            {operation: '[]', bounds: [100, 190]}
                         ]
                     }
                 });
-                _assert([
+                _assert('with operation:[]', [0, BADNUM, BADNUM, BADNUM, BADNUM, BADNUM, BADNUM, 200]);
+
+                _calc({
+                    x: [0, 10, 50, 90, 100, 150, 190, 200]
+                }, {
+                    xaxis: {
+                        breaks: [
+                            {operation: '[)', bounds: [10, 90]},
+                            {operation: '(]', bounds: [100, 190]}
+                        ]
+                    }
+                });
+                _assert('with mixed operation values', [0, BADNUM, BADNUM, 90, 100, BADNUM, BADNUM, 200]);
+            });
+
+            it('should discard coords within break bounds - date %w case', function() {
+                var x = [
+                    // Thursday
+                    '2020-01-02 08:00', '2020-01-02 16:00',
+                    // Friday
+                    '2020-01-03 08:00', '2020-01-03 16:00',
+                    // Saturday
+                    '2020-01-04 08:00', '2020-01-04 16:00',
+                    // Sunday
+                    '2020-01-05 08:00', '2020-01-05 16:00',
+                    // Monday
+                    '2020-01-06 08:00', '2020-01-06 16:00',
+                    // Tuesday
+                    '2020-01-07 08:00', '2020-01-07 16:00'
+                ];
+
+                var noWeekend = [
                     1577952000000, 1577980800000,
                     1578038400000, 1578067200000,
                     BADNUM, BADNUM,
                     BADNUM, BADNUM,
                     1578297600000, 1578326400000,
                     1578384000000, 1578412800000
-                ]);
+                ];
+
+                _calc({x: x}, {
+                    xaxis: {
+                        breaks: [
+                            {directive: '%w', bounds: [6, 0], operation: '[]'}
+                        ]
+                    }
+                });
+                _assert('[6,0]', noWeekend);
+
+                _calc({x: x}, {
+                    xaxis: {
+                        breaks: [
+                            {directive: '%w', bounds: [5, 1], operation: '()'}
+                        ]
+                    }
+                });
+                _assert('(5,1)', noWeekend);
+
+                _calc({x: x}, {
+                    xaxis: {
+                        breaks: [
+                            {directive: '%w', bounds: [6, 1], operation: '[)'}
+                        ]
+                    }
+                });
+                _assert('[6,1)', noWeekend);
+
+                _calc({x: x}, {
+                    xaxis: {
+                        breaks: [
+                            {directive: '%w', bounds: [5, 0], operation: '(]'}
+                        ]
+                    }
+                });
+                _assert('(5,0]', noWeekend);
             });
 
             it('should discard coords within break bounds - date %H case', function() {
@@ -3987,7 +4040,7 @@ describe('Test axes', function() {
                         ]
                     }
                 });
-                _assert([
+                _assert('with dflt operation', [
                     1577952000000, BADNUM,
                     1578038400000, BADNUM,
                     1578124800000, BADNUM,
@@ -4009,7 +4062,7 @@ describe('Test axes', function() {
                         ]
                     }
                 });
-                _assert([1, 1.5, 2, BADNUM, 3]);
+                _assert('generated x=2.5 gets masked', [1, 1.5, 2, BADNUM, 3]);
             });
         });
 
@@ -4223,7 +4276,7 @@ describe('Test axes', function() {
                 })
                 .then(function() {
                     gd.layout.xaxis.breaks = [
-                        {directive: '%w', bounds: [6, 1]}
+                        {directive: '%w', bounds: [5, 1]}
                     ];
                     return Plotly.react(gd, gd.data, gd.layout);
                 })
@@ -4263,7 +4316,7 @@ describe('Test axes', function() {
                 })
                 .then(function() {
                     gd.layout.xaxis.breaks = [
-                        {directive: '%w', bounds: [6, 1]},
+                        {directive: '%w', bounds: [5, 1]},
                         {directive: '%H', bounds: [17, 8]}
                     ];
                     return Plotly.react(gd, gd.data, gd.layout);
@@ -4289,7 +4342,7 @@ describe('Test axes', function() {
 
                     // gd.layout.xaxis.breaks = [
                     //     {directive: '%H', bounds: [17, 8]},
-                    //     {directive: '%w', bounds: [6, 1]}
+                    //     {directive: '%w', bounds: [5, 1]}
                     // ];
                     // return Plotly.react(gd, gd.data, gd.layout);
                 })

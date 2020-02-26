@@ -320,7 +320,13 @@ module.exports = {
             role: 'info',
             editType: 'calc',
             description: [
-                'Determines if we include or not the bound values within the break.'
+                'Determines if we include or not the bound values within the break.',
+                'Closed interval bounds (i.e. starting with *[* or ending with *]*)',
+                'include the bound value within the break and thus make coordinates',
+                'equal to the bound disappear.',
+                'Open interval bounds (i.e. starting with *(* or ending with *)*)',
+                'does not include the bound value within the break and thus keep coordinates',
+                'equal to the bound on the axis.'
             ].join(' ')
         },
 
