@@ -31,24 +31,31 @@ var style = require('./style');
 var helpers = require('./helpers');
 
 module.exports = function draw(gd, layer, opts) {
-    var main;
     var fullLayout = gd._fullLayout;
     var clipId = 'legend' + fullLayout._uid;
 
-    if(!layer) layer = fullLayout._infolayer;
-    if(!layer || !gd.calcdata) return;
-
-    if(!gd._legendMouseDownTime) gd._legendMouseDownTime = 0;
-
+    // Check whether this is the main legend (ie. called without any opts)
+    var main;
     if(!opts) {
         main = true;
         opts = fullLayout.legend;
+    } else {
+        clipId += '-hover';
     }
+
+    if(!layer) layer = fullLayout._infolayer;
+    if(!layer) return;
+
+    if(!gd._legendMouseDownTime) gd._legendMouseDownTime = 0;
+
+
     var legendData;
     if(main) {
+        if(!gd.calcdata) return;
         legendData = fullLayout.showlegend && getLegendData(gd.calcdata, opts);
     } else {
-        legendData = opts.entries && [opts.entries];
+        if(!opts.entries) return;
+        legendData = [opts.entries];
     }
 
     var hiddenSlices = fullLayout.hiddenlabels || [];
