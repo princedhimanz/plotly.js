@@ -136,7 +136,7 @@ module.exports = function handleAxisDefaults(containerIn, containerOut, coerce, 
     return containerOut;
 };
 
-function breaksDefaults(itemIn, itemOut) {
+function breaksDefaults(itemIn, itemOut, containerOut) {
     function coerce(attr, dflt) {
         return Lib.coerce(itemIn, itemOut, layoutAttributes.breaks, attr, dflt);
     }
@@ -145,9 +145,10 @@ function breaksDefaults(itemIn, itemOut) {
     if(enabled) {
         coerce('bounds');
         coerce('operation');
-        coerce('directive');
 
-        // ... more
+        if(containerOut.type === 'date') {
+            coerce('directive');
+        }
 
         // TODO if break bounds are bigger than the (set) range,
         // it should get set to enabled:false !!

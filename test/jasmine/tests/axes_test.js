@@ -1035,6 +1035,12 @@ describe('Test axes', function() {
             expect(layoutOut.xaxis3.breaks).toBeUndefined();
             expect(layoutOut.xaxis4.breaks).toBeUndefined();
         });
+
+        it('should only coerce breaks *directive* on date axes', function() {
+            // TODO
+            // ... not sure about this one,
+            // maybe  we should always coerce it with some default value ''
+            // that would work for all axis types
         });
     });
 
