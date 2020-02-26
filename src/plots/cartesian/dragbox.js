@@ -987,8 +987,13 @@ function zoomAxRanges(axList, r0Fraction, r1Fraction, updates, linkedAxes) {
         if(axi.fixedrange) continue;
 
         if(axi.breaks) {
-            updates[axi._name + '.range[0]'] = axi.l2r(axi.p2l(r0Fraction * axi._length));
-            updates[axi._name + '.range[1]'] = axi.l2r(axi.p2l(r1Fraction * axi._length));
+            if(axi._id.charAt(0) === 'y') {
+                updates[axi._name + '.range[0]'] = axi.l2r(axi.p2l((1 - r0Fraction) * axi._length));
+                updates[axi._name + '.range[1]'] = axi.l2r(axi.p2l((1 - r1Fraction) * axi._length));
+            } else {
+                updates[axi._name + '.range[0]'] = axi.l2r(axi.p2l(r0Fraction * axi._length));
+                updates[axi._name + '.range[1]'] = axi.l2r(axi.p2l(r1Fraction * axi._length));
+            }
         } else {
             var axRangeLinear0 = axi._rl[0];
             var axRangeLinearSpan = axi._rl[1] - axRangeLinear0;
