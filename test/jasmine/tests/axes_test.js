@@ -1018,8 +1018,23 @@ describe('Test axes', function() {
             expect(layoutOut.yaxis2.range).withContext('yaxis2 range').toEqual([0, 4]);
         });
 
-        it('should ... axis breaks', function() {
+        it('should coerce *breaks* container only when it is a non-empty array', function() {
+            layoutIn = {
+                xaxis: {breaks: [{bounds: [0, 1]}]},
+                xaxis2: {breaks: []},
+                xaxis3: {breaks: false},
+                xaxis4: {}
+            };
+            layoutOut._subplots.xaxis.push('x2', 'x3', 'x4');
 
+            supplyLayoutDefaults(layoutIn, layoutOut, fullData);
+
+            expect(Array.isArray(layoutOut.xaxis.breaks) && layoutOut.xaxis.breaks.length)
+                .toBe(1, 'xaxis.breaks is array of length 1');
+            expect(layoutOut.xaxis2.breaks).toBeUndefined();
+            expect(layoutOut.xaxis3.breaks).toBeUndefined();
+            expect(layoutOut.xaxis4.breaks).toBeUndefined();
+        });
         });
     });
 
